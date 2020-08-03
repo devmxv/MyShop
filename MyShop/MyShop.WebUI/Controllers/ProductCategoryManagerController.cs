@@ -11,11 +11,12 @@ namespace MyShop.WebUI.Controllers
     public class ProductCategoryManagerController : Controller
     {
         //---Used to access the product?
-        ProductCategoryRepository context;
+        //ProductCategoryRepository context;
+        InMemoryReposiory<ProductCategory> context;
 
         public ProductCategoryManagerController()
         {
-            context = new ProductCategoryRepository();
+            context = new InMemoryReposiory<ProductCategory>();
         }
 
         // GET: ProductManager
