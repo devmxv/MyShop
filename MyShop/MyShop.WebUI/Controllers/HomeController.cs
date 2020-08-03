@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MyShop.Core.Contracts;
+using MyShop.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -8,9 +10,41 @@ namespace MyShop.WebUI.Controllers
 {
     public class HomeController : Controller
     {
+        //---Used to access the product?
+        //ProductRepository context;
+        IRepository<Product> context;
+        IRepository<ProductCategory> productCategories;
+        //---Load the categories from db
+        //ProductCategoryRepository productCategories;
+
+        public HomeController(IRepository<Product> productContext, IRepository<ProductCategory> productCategoryContext)
+        {
+            //---Init these
+            //context = new InMemoryRepository<Product>();
+            //---Now that the interfaces are working
+            //---we can set the init different
+            context = productContext;
+            //productCategories = new InMemoryRepository<ProductCategory>();
+            productCategories = productCategoryContext;
+        }
+
         public ActionResult Index()
         {
-            return View();
+            //---Get the list of products
+            List<Product> products = context.Collection().ToList();
+            return View(products);
+        }
+
+        public ActionResult Details(string Id)
+        {
+            Product product = context.Find(Id);
+            if(product == null)
+            {
+                return HttpNotFound();
+            } else
+            {
+                return View(product);
+            }
         }
 
         public ActionResult About()
