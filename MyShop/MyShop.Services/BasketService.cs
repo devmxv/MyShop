@@ -1,5 +1,6 @@
 ﻿using MyShop.Core.Contracts;
 using MyShop.Core.Models;
+using MyShop.Core.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
+
 namespace MyShop.Services
 {
-    public class BasketService
+    public class BasketService : IBasketService
     {
         IRepository<Product> productContext;
         IRepository<Basket> basketContext;
@@ -31,7 +33,8 @@ namespace MyShop.Services
 
             Basket basket = new Basket();
 
-            //---Whether user has visited before or first time
+            //---Whether user has visited before or first time,
+            //---sets the cookie or read it again
             if(cookie != null)
             {
                 string basketId = cookie.Value;
@@ -65,6 +68,7 @@ namespace MyShop.Services
             basketContext.Insert(basket);
             basketContext.Commit();
 
+            //---Uses the cookie value as a basket Id
             HttpCookie cookie = new HttpCookie(BasketSessionName);
             cookie.Value = basket.Id;
             //---Expiration of the cookie
@@ -80,6 +84,7 @@ namespace MyShop.Services
             BasketItem item = basket.BasketItems.FirstOrDefault(i => i.ProductId == productId);
 
             //---Item exists in the basket?
+            //---Otherwise it adds 1 in quantity
             if(item == null)
             {
                 item = new BasketItem()
@@ -110,6 +115,64 @@ namespace MyShop.Services
                 basketContext.Commit();
             }
 
+        }
+
+        public List<BasketItemViewModel> GetBasketItems(HttpContextBase httpContext)
+        {
+            Basket basket = GetBasket(httpContext, false);
+
+            if(basket != null)
+            {
+                //---Query the info of the product using Linq
+                //---Uses the object to get the info, store it
+                //---into a list
+                var results = (from b in basket.BasketItems
+                              join p in productContext.Collection() on
+                              b.ProductId equals p.Id                              
+                              select new BasketItemViewModel()
+                              {
+                                  Id = b.Id,
+                                  Quantity = b.Quantity,
+                                  ProductName = p.Name,
+                                  Image = p.Image,
+                                  Price = p.Price
+                              }
+                              ).ToList();
+
+                return results;
+                              
+            } else
+            {
+                //---if not, returns empty list
+                return new List<BasketItemViewModel>();
+            }
+        }
+
+        public BasketSummaryViewModel GetBasketSummary(HttpContextBase httpContext)
+        {
+            Basket basket = GetBasket(httpContext, false);
+            //---Default values of 0,0
+            BasketSummaryViewModel model = new BasketSummaryViewModel(0, 0);
+            if(basket != null)
+            {
+                //---int? can save a null value in basketCount
+                int? basketCount = (from item in basket.BasketItems
+                                    select item.Quantity).Sum();
+
+                decimal? basketTotal = (from item in basket.BasketItems
+                                        join p in productContext.Collection() on
+                                        item.ProductId equals p.Id
+                                        select item.Quantity * p.Price).Sum();
+
+                model.BasketCount = basketCount ?? 0;
+                model.BasketTotal = basketTotal ?? decimal.Zero;
+
+                return model;
+
+            } else
+            {
+                return model;
+            }
         }
     }
 }
