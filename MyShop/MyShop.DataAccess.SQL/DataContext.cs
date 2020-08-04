@@ -22,6 +22,9 @@ namespace MyShop.DataAccess.SQL
         //---Passing the values of the tables needed taken from module
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
+        //---Related to shopping basket
+        public DbSet<Basket> Baskets { get; set; }
+        public DbSet<BasketItem> BasketItems { get; set; }
         
     }
 }
